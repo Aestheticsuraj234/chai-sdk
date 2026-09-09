@@ -1,18 +1,24 @@
 import { tool, type Tool } from "../tools/tool";
 
+type Message = {
+    role:string;
+    content:string;
+}
+
 export class OpenAILLM {
     constructor(
         private apiKey:string,
         private model = "gpt-4o-mini"
     ){}
 
-    async ask(prompt:string , system:string, tools:Tool[]){
+    async ask(prompt:string , system:string, tools:Tool[]=[], history:Message[] = []){
 
         const body:any = {
 
             model:this.model,
             messages:[
                 {role:"system" , content:system},
+                ...history,
                 {role:"user" , content:prompt}
             ]
         }

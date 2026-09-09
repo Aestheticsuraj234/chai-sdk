@@ -1,3 +1,4 @@
+import { ConversationMemory } from "../memory/conversation";
 import  { ToolRegistry } from "../tools/registry";
 import type { Tool } from "../tools/tool";
 import { OpenAILLM } from "./llm";
@@ -7,6 +8,7 @@ export class Agent {
     instructions:string;
     llm:OpenAILLM;
     tools = new ToolRegistry();
+    memory = new ConversationMemory();
 
    constructor(options:{
     name:string;
@@ -28,7 +30,12 @@ export class Agent {
     let message = prompt;
 
     for(let i =0; i<5; i++){
-        const reply = await this.llm.ask(message , this.instructions , this.tools.tools);
+        const reply = await this.llm.ask(
+            message , 
+            this.instructions , 
+            this.tools.tools,
+            this.memory.messages
+        );
 
         try {
             const call = JSON.parse(reply);
@@ -40,6 +47,9 @@ export class Agent {
         } catch {
             // Not a tool call — treat reply as the final answer
         }
+
+        this.memory.add("user", prompt);
+        this.memory.add("assistant", reply);
 
         return reply;
     }

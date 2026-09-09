@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "build":"tsc",
-    "dev":"bun run examples/tool-agent.ts",
+    "dev":"bun run examples/memory-agent.ts",
     "test":"bun test"
 
   },
