@@ -1,14 +1,17 @@
 import { ConversationMemory } from "../memory/conversation";
 import  { ToolRegistry } from "../tools/registry";
 import type { Tool } from "../tools/tool";
-import { OpenAILLM } from "./llm";
+import { LLM } from "./llm";
+import { Planner } from "../planner/planner";
 
 export class Agent {
     name:string;
     instructions:string;
-    llm:OpenAILLM;
+    llm:LLM;
     tools = new ToolRegistry();
     memory = new ConversationMemory();
+    planner:Planner;
+    plan: string[] = [];
 
    constructor(options:{
     name:string;
@@ -19,7 +22,8 @@ export class Agent {
     this.name = options.name;
     this.instructions = options.instructions;
    const apiKey = options.apiKey || process.env.OPENAI_API_KEY!;
-    this.llm = new OpenAILLM(apiKey, options.model);
+    this.llm = new LLM(apiKey, options.model);
+    this.planner = new Planner(this.llm);
    }
 
    registerTool(tool:Tool){
@@ -55,5 +59,32 @@ export class Agent {
     }
 
     return "Could not complete task";
+   }
+
+   async runWithPlan(prompt:string){
+    this.plan = await this.planner.createPlan(prompt);
+
+    const results = [];
+
+    for(const step of this.plan){
+        const reply = await this.llm.ask(
+            step,
+            this.instructions,
+            this.tools.tools,
+            []
+        );
+
+        results.push(reply);
+    }
+
+    const summary = await this.llm.ask(
+        `Goal: ${prompt}\nStep results: ${results.join(" | ")}\nGive a final summary.`,
+        this.instructions,
+      );
+
+      this.memory.add("user", prompt);
+      this.memory.add("assistant", summary);
+
+      return summary;
    }
 }

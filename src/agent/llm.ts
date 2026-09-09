@@ -5,7 +5,7 @@ type Message = {
     content:string;
 }
 
-export class OpenAILLM {
+export class LLM {
     constructor(
         private apiKey:string,
         private model = "gpt-4o-mini"
