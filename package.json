@@ -3,6 +3,12 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "build":"tsc",
+    "dev":"bun run examples/hello-agent.ts",
+    "test":"bun test"
+
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
