@@ -1,26 +1,52 @@
+import { tool, type Tool } from "../tools/tool";
+
 export class OpenAILLM {
     constructor(
         private apiKey:string,
         private model = "gpt-4o-mini"
     ){}
 
-    async ask(prompt:string , system:string){
+    async ask(prompt:string , system:string, tools:Tool[]){
+
+        const body:any = {
+
+            model:this.model,
+            messages:[
+                {role:"system" , content:system},
+                {role:"user" , content:prompt}
+            ]
+        }
+        if(tools.length){
+            body.tools = tools.map((t)=>({
+                type: "function",
+                function: {
+                    name: t.name,
+                    description: t.description,
+                    parameters: t.parameters ?? { type: "object", properties: {} },
+                }
+            }))
+        }
+
         const res = await fetch("https://api.openai.com/v1/chat/completions",{
             method:"POST",
             headers:{
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${this.apiKey}`,
             },
-            body:JSON.stringify({
-                model:this.model,
-                messages:[
-                    {role:"system" , content:system},
-                    {role:"user" , content:prompt}
-                ]
-            })
+                body:JSON.stringify(body)
         });
 
         const data:any = await res.json();
-        return data.choices[0].message.content;
+        const message = data.choices[0].message;
+
+        if(message?.tool_calls?.length){
+            const call = message.tool_calls[0];
+            return JSON.stringify({
+                tool:call.function.name,
+                args:JSON.parse(call.function.arguments || "{}")
+            })
+        }
+
+        return message.content;
     }
 }

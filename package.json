@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "build":"tsc",
-    "dev":"bun run examples/hello-agent.ts",
+    "dev":"bun run examples/tool-agent.ts",
     "test":"bun test"
 
   },
