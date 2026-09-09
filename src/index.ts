@@ -8,3 +8,7 @@ export { workflow } from "./workflow/workflow";
 export { WorkflowEngine } from "./workflow/engine";
 export { Executor } from "./executor/executor";
 export { Context } from "./executor/context";
+export { Tracer } from "./tracing/tracer";
+export type { TraceEvent, TraceSpan } from "./tracing/tracer";
+export { blockTool, contentFilter } from "./guardrails/guardrails";
+export type { Guardrail } from "./guardrails/guardrails";

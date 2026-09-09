@@ -1,7 +1,10 @@
 import type { LLM } from "../agent/llm";
 import type { ToolRegistry } from "../tools/registry";
+import type { Tracer } from "../tracing/tracer";
 
 export class WorkflowEngine {
+    constructor(private tracer?: Tracer) {}
+
     resolve(template:string , inputs:any , results:any[]){
         let out = template;
 
@@ -25,18 +28,37 @@ export class WorkflowEngine {
         tools: ToolRegistry,
         instructions: string,
       ) {
-        const results: any[] = [];
-    
-        for (const step of workflow.steps) {
-          const input = this.resolve(step.input, inputs, results);
-    
-          if (step.tool) {
-            results.push(await tools.run(step.tool, JSON.parse(input)));
-          } else {
-            results.push(await llm.ask(input, instructions, tools.tools, []));
+        const span = this.tracer?.startSpan("workflow.run", {
+          name: workflow.name,
+          inputs,
+          steps: workflow.steps.length,
+        });
+
+        try {
+          const results: any[] = [];
+      
+          for (let i = 0; i < workflow.steps.length; i++) {
+            const step = workflow.steps[i]!;
+            const input = this.resolve(step.input, inputs, results);
+            this.tracer?.log("workflow.step.start", { index: i, tool: step.tool, input });
+      
+            let result;
+            if (step.tool) {
+              result = await tools.run(step.tool, JSON.parse(input));
+            } else {
+              result = await llm.ask(input, instructions, tools.tools, []);
+            }
+
+            results.push(result);
+            this.tracer?.log("workflow.step.end", { index: i, result });
           }
+      
+          const output = results.at(-1);
+          span?.end({ result: output });
+          return output;
+        } catch (err) {
+          span?.error(err);
+          throw err;
         }
-    
-        return results.at(-1);
       }
 }

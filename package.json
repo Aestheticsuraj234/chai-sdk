@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "build":"tsc",
-    "dev":"bun run examples/workflow-agent.ts",
+    "dev":"bun run examples/guardrails-agent.ts",
     "test":"bun test"
 
   },
