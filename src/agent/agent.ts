@@ -3,6 +3,8 @@ import  { ToolRegistry } from "../tools/registry";
 import type { Tool } from "../tools/tool";
 import { LLM } from "./llm";
 import { Planner } from "../planner/planner";
+import { Context } from "../executor/context";
+import { Executor } from "../executor/executor";
 
 export class Agent {
     name:string;
@@ -12,6 +14,8 @@ export class Agent {
     memory = new ConversationMemory();
     planner:Planner;
     plan: string[] = [];
+    context = new Context();
+    executor:Executor;
 
    constructor(options:{
     name:string;
@@ -24,6 +28,7 @@ export class Agent {
    const apiKey = options.apiKey || process.env.OPENAI_API_KEY!;
     this.llm = new LLM(apiKey, options.model);
     this.planner = new Planner(this.llm);
+    this.executor = new Executor(this.llm);
    }
 
    registerTool(tool:Tool){
@@ -63,19 +68,11 @@ export class Agent {
 
    async runWithPlan(prompt:string){
     this.plan = await this.planner.createPlan(prompt);
+const {context , results} = await this.executor.runAll(this.plan, this.instructions, this.tools.tools);
 
-    const results = [];
+    this.context = context;
 
-    for(const step of this.plan){
-        const reply = await this.llm.ask(
-            step,
-            this.instructions,
-            this.tools.tools,
-            []
-        );
-
-        results.push(reply);
-    }
+   
 
     const summary = await this.llm.ask(
         `Goal: ${prompt}\nStep results: ${results.join(" | ")}\nGive a final summary.`,
