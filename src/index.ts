@@ -4,3 +4,7 @@ export { tool } from "./tools/tool";
 export { ToolRegistry } from "./tools/registry";
 export { calculator, echo } from "./tools/builtins";
 export { ConversationMemory } from "./memory/conversation";
+export { workflow } from "./workflow/workflow";
+export { WorkflowEngine } from "./workflow/engine";
+export { Executor } from "./executor/executor";
+export { Context } from "./executor/context";

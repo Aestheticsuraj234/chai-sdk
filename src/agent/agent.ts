@@ -5,6 +5,7 @@ import { LLM } from "./llm";
 import { Planner } from "../planner/planner";
 import { Context } from "../executor/context";
 import { Executor } from "../executor/executor";
+import { WorkflowEngine } from "../workflow/engine";
 
 export class Agent {
     name:string;
@@ -16,6 +17,7 @@ export class Agent {
     plan: string[] = [];
     context = new Context();
     executor:Executor;
+    workflowEngine = new WorkflowEngine();
 
    constructor(options:{
     name:string;
@@ -84,4 +86,21 @@ const {context , results} = await this.executor.runAll(this.plan, this.instructi
 
       return summary;
    }
+
+   async runWorkflow(
+    workflow: { name: string; steps: { input: string; tool?: string }[] },
+    inputs: any = {},
+  ) {
+    const result = await this.workflowEngine.run(
+      workflow,
+      inputs,
+      this.llm,
+      this.tools,
+      this.instructions,
+    );
+
+    this.memory.add("user", `[workflow: ${workflow.name}] ${JSON.stringify(inputs)}`);
+    this.memory.add("assistant", String(result));
+    return result;
+  }
 }
